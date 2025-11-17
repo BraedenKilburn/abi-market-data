@@ -1,0 +1,404 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import { getCollection } from 'astro:content'
+import type { CollectionEntry } from 'astro:content'
+import { processItemData, getAllItemKeys } from '@/lib/data'
+
+type Catalog = CollectionEntry<'catalog'>
+
+export async function getStaticPaths() {
+  const catalog: Catalog[] = await getCollection('catalog')
+  const itemKeyMap = getAllItemKeys(catalog)
+  const paths: Array<{ params: { slug: string } }> = []
+
+  for (const slug of itemKeyMap.keys()) {
+    paths.push({ params: { slug } })
+  }
+
+  return paths
+}
+
+const catalog: Catalog[] = await getCollection('catalog')
+
+// Load display mappings
+const displayMappingsCollection = await getCollection('displayMappings')
+const displayMappingsMap = new Map<string, string>()
+displayMappingsCollection.forEach(({ id, data }) => {
+  displayMappingsMap.set(id, data)
+})
+
+// Get slug from params
+const { slug } = Astro.params
+
+// Get itemKey from slug mapping
+const itemKeyMap = getAllItemKeys(catalog)
+const itemKey = itemKeyMap.get(slug)
+if (!itemKey) {
+  return Astro.redirect('/')
+}
+
+// Process item data
+const itemData = processItemData(catalog, displayMappingsMap, itemKey)
+if (!itemData) {
+  return Astro.redirect('/')
+}
+
+// Import thumbnail if available
+let thumbnailSrc = `/thumbs/${itemData.thumbHash}.png`
+try {
+  const thumbnailModule = await import(
+    `../../assets/thumbs/${itemData.thumbHash}.png`
+  )
+  thumbnailSrc = thumbnailModule.default.src
+} catch (error) {
+  // Fallback to public path
+  console.log('error', error)
+}
+
+// Format price
+function formatPrice(price: number): string {
+  return price.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+}
+
+// Format percentage
+function formatPercent(value: number | null): string {
+  if (value === null) return 'N/A'
+  const sign = value >= 0 ? '+' : ''
+  return `${sign}${value.toFixed(1)}%`
+}
+---
+
+<Layout>
+  <main class="item-detail">
+    <nav class="breadcrumb">
+      <a href="/">Home</a>
+      <span> / </span>
+      <a
+        href={`/categories/${itemData.category.toLowerCase().replace(/\s+/g, '-')}`}
+      >
+        {itemData.category}
+      </a>
+      <span> / </span>
+      <span>{itemData.displayName}</span>
+    </nav>
+
+    <article class="item-header">
+      <div class="item-thumbnail">
+        {
+          itemData.thumbHash && (
+            <img
+              src={thumbnailSrc}
+              alt={`${itemData.displayName} thumbnail`}
+              loading="eager"
+            />
+          )
+        }
+      </div>
+
+      <div class="item-info">
+        <h1>{itemData.displayName}</h1>
+        <p class="item-meta">
+          <span class="category">{itemData.category}</span>
+          {
+            itemData.itemName !== itemData.displayName && (
+              <span class="item-name">({itemData.itemName})</span>
+            )
+          }
+        </p>
+      </div>
+    </article>
+
+    <section class="price-history">
+      <h2>Price History Table</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Price</th>
+              <th>Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              itemData.priceHistory
+                .map((point, index) => {
+                  const prevPrice =
+                    index > 0 ? itemData.priceHistory[index - 1].price : null
+                  const change =
+                    prevPrice !== null ? point.price - prevPrice : null
+                  const changePercent =
+                    prevPrice !== null && prevPrice > 0
+                      ? (change! / prevPrice) * 100
+                      : null
+
+                  return (
+                    <tr>
+                      <td>{point.date.toLocaleString()}</td>
+                      <td>{formatPrice(point.price)}</td>
+                      <td
+                        class={
+                          change !== null
+                            ? change >= 0
+                              ? 'positive'
+                              : 'negative'
+                            : ''
+                        }
+                      >
+                        {change !== null ? formatPercent(changePercent!) : '-'}
+                      </td>
+                    </tr>
+                  )
+                })
+                .reverse()
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .item-detail {
+    padding: 2rem 1rem;
+  }
+
+  .breadcrumb {
+    margin-bottom: 2rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .breadcrumb a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .item-header {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  .item-thumbnail {
+    width: 200px;
+    aspect-ratio: 1;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .item-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .item-info h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+  }
+
+  .item-meta {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+  }
+
+  .item-meta .category {
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+
+  .item-meta .item-name {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .price-display {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .current-price,
+  .ma-price {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .current-price .label,
+  .ma-price .label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .current-price .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-accent);
+  }
+
+  .ma-price .value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .metrics {
+    margin-bottom: 3rem;
+  }
+
+  .metrics h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .metric-card {
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .metric-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .metric-value.positive {
+    color: #4ade80;
+  }
+
+  .metric-value.negative {
+    color: #f87171;
+  }
+
+  .metric-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .price-chart {
+    margin-bottom: 3rem;
+  }
+
+  .price-chart h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-container {
+    width: 100%;
+    height: 400px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chart-note {
+    margin-top: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .price-history h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background: var(--bg-tertiary);
+  }
+
+  th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+  }
+
+  tbody tr:hover {
+    background: var(--bg-tertiary);
+  }
+
+  td.positive {
+    color: #4ade80;
+  }
+
+  td.negative {
+    color: #f87171;
+  }
+
+  @media (max-width: 768px) {
+    .item-header {
+      grid-template-columns: 1fr;
+    }
+
+    .item-thumbnail {
+      width: 100%;
+      max-width: 200px;
+      margin: 0 auto;
+    }
+
+    .metrics-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

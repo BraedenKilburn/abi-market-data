@@ -1,0 +1,205 @@
+@import "~/modern-normalize/modern-normalize.css";
+
+:root {
+  color-scheme: light dark;
+
+  /* Light theme variables */
+  --light-accent-color: #0077b6;
+  --light-accent-hover: #015ba0;
+  --light-accent-light: #ededed;
+
+  --light-text-primary: #000000;
+  --light-text-secondary: #333333;
+  --light-text-muted: #666666;
+
+  --light-bg-primary: #ffffff;
+  --light-bg-secondary: #f8f8f8;
+  --light-bg-tertiary: #f0f0f0;
+  --light-bg-elevated: #ffffff;
+
+  --light-border-color: #e0e0e0;
+  --light-border-hover: #cccccc;
+
+  --light-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.1);
+  --light-shadow-md:
+    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --light-shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Dark theme variables */
+  --dark-accent-color: #598392;
+  --dark-accent-hover: #366476;
+  --dark-accent-light: #2a2a2a;
+
+  --dark-text-primary: #ffffff;
+  --dark-text-secondary: #cccccc;
+  --dark-text-muted: #999999;
+
+  --dark-bg-primary: #121212;
+  --dark-bg-secondary: #181818;
+  --dark-bg-tertiary: #202020;
+  --dark-bg-elevated: #282828;
+
+  --dark-border-color: #333333;
+  --dark-border-hover: #444444;
+
+  --dark-shadow-sm: 0 1px 2px 0 rgb(255 255 255 / 0.1);
+  --dark-shadow-md:
+    0 4px 6px -1px rgb(255 255 255 / 0.1), 0 2px 4px -2px rgb(255 255 255 / 0.1);
+  --dark-shadow-lg:
+    0 10px 15px -3px rgb(255 255 255 / 0.1),
+    0 4px 6px -4px rgb(255 255 255 / 0.1);
+
+  /* Theme variables */
+  --color-accent: light-dark(
+    var(--light-accent-color),
+    var(--dark-accent-color)
+  );
+  --color-accent-hover: light-dark(
+    var(--light-accent-hover),
+    var(--dark-accent-hover)
+  );
+  --color-accent-light: light-dark(
+    var(--light-accent-light),
+    var(--dark-accent-light)
+  );
+
+  --text-primary: light-dark(
+    var(--light-text-primary),
+    var(--dark-text-primary)
+  );
+  --text-secondary: light-dark(
+    var(--light-text-secondary),
+    var(--dark-text-secondary)
+  );
+  --text-muted: light-dark(var(--light-text-muted), var(--dark-text-muted));
+
+  --bg-primary: light-dark(var(--light-bg-primary), var(--dark-bg-primary));
+  --bg-secondary: light-dark(
+    var(--light-bg-secondary),
+    var(--dark-bg-secondary)
+  );
+  --bg-tertiary: light-dark(var(--light-bg-tertiary), var(--dark-bg-tertiary));
+  --bg-elevated: light-dark(var(--light-bg-elevated), var(--dark-bg-elevated));
+
+  --border-color: light-dark(
+    var(--light-border-color),
+    var(--dark-border-color)
+  );
+  --border-hover: light-dark(
+    var(--light-border-hover),
+    var(--dark-border-hover)
+  );
+
+  --shadow-sm: light-dark(var(--light-shadow-sm), var(--dark-shadow-sm));
+  --shadow-md: light-dark(var(--light-shadow-md), var(--dark-shadow-md));
+  --shadow-lg: light-dark(var(--light-shadow-lg), var(--dark-shadow-lg));
+
+  /* Scrollbar variables */
+  --sb-track-color: var(--bg-tertiary);
+  --sb-thumb-color: var(--color-accent);
+  --sb-size: 8px;
+}
+
+body {
+  color-scheme: light;
+
+  &.dark-mode {
+    color-scheme: dark;
+  }
+}
+
+/* Global styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  font-family: "Atkinson Hyperlegible Next", sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  padding-top: 1rem;
+  width: clamp(300px, 90%, 1200px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+
+  &.dark-mode img {
+    filter: brightness(0.8) contrast(1.2);
+  }
+}
+
+/* Scrollbar styles */
+body::-webkit-scrollbar {
+  width: var(--sb-size)
+}
+
+body::-webkit-scrollbar-track {
+  background: var(--sb-track-color);
+  border-radius: 20px;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: var(--sb-thumb-color);
+  border-radius: 20px;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  body {
+    scrollbar-color: var(--sb-thumb-color)
+                     var(--sb-track-color);
+  }
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+h2 {
+  font-size: 2rem;
+}
+h3 {
+  font-size: 1.5rem;
+}
+h4 {
+  font-size: 1.25rem;
+}
+h5 {
+  font-size: 1.125rem;
+}
+h6 {
+  font-size: 1rem;
+}
+
+p {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--text-muted);
+}

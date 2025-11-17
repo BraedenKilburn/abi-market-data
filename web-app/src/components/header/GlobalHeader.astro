@@ -1,0 +1,168 @@
+---
+import Button from "@/components/Button.astro";
+import ThemeToggle from "@/components/header/ThemeToggle.astro";
+---
+
+<header>
+  <h1><a href="/">ABI Trading Platform</a></h1>
+  <nav>
+    <ul>
+      <li><Button href="/" variant="ghost">Home</Button></li>
+      <li><Button href="/about" variant="ghost">About</Button></li>
+    </ul>
+  </nav>
+  <div class="controls">
+    <ThemeToggle />
+    <button class="menu-toggle" aria-label="Toggle menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+</header>
+
+<script is:inline>
+  const menuToggle = document.querySelector(".menu-toggle");
+  const nav = document.querySelector("nav");
+  const header = document.querySelector("header");
+
+  menuToggle?.addEventListener("click", () => {
+    nav?.classList.toggle("open");
+    menuToggle.classList.toggle("open");
+  });
+
+  nav?.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      nav.classList.remove("open");
+      menuToggle?.classList.remove("open");
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!header?.contains(e.target)) {
+      nav?.classList.remove("open");
+      menuToggle?.classList.remove("open");
+    }
+  });
+</script>
+
+<style>
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    position: sticky;
+    top: 1rem;
+    z-index: 100;
+    background: light-dark(rgba(230, 230, 230, 0.1), rgba(75, 75, 75, 0.1));
+    backdrop-filter: blur(10px);
+    border: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.2));
+    border-radius: 9999px;
+    box-shadow: var(--shadow-sm);
+
+    h1 {
+      font-size: 1.125rem;
+      font-weight: 600;
+
+      a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: var(--color-accent);
+        }
+      }
+    }
+
+    nav {
+      ul {
+        display: flex;
+        gap: 1rem;
+        list-style-type: none;
+
+        a {
+          padding: 0.75rem;
+          border-radius: 0.675rem;
+
+          &:hover {
+            text-decoration: none;
+          }
+        }
+      }
+
+      @media (max-width: 768px) {
+        position: absolute;
+        top: calc(100% + 1rem);
+        left: 0;
+        right: 0;
+        background: var(--bg-elevated);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        padding: 1rem;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+
+        &.open {
+          opacity: 1;
+          pointer-events: all;
+          transform: translateY(0);
+        }
+
+        ul {
+          flex-direction: column;
+          text-align: center;
+          gap: 0.5rem;
+          padding: 0;
+        }
+      }
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+
+      span {
+        width: 20px;
+        height: 2px;
+        background: var(--text-primary);
+        transition: all 0.3s ease;
+        transform-origin: center;
+      }
+
+      &.open span {
+        &:nth-child(1) {
+          transform: translateY(6px) rotate(45deg);
+        }
+        &:nth-child(2) {
+          opacity: 0;
+        }
+        &:nth-child(3) {
+          transform: translateY(-6px) rotate(-45deg);
+        }
+      }
+
+      @media (max-width: 768px) {
+        display: flex;
+      }
+    }
+
+    @media (max-width: 768px) {
+      border-radius: 1rem;
+    }
+  }
+</style>

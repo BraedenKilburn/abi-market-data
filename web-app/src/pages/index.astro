@@ -1,0 +1,261 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import { getCollection } from 'astro:content'
+import type { CollectionEntry } from 'astro:content'
+import { itemKeyToSlug } from '@/lib/data'
+
+type Catalog = CollectionEntry<'catalog'>
+const catalog: Catalog[] = await getCollection('catalog')
+
+// Get the most recent snapshot
+const latestSnapshot = catalog.sort(
+  (a, b) => b.data.timestamp - a.data.timestamp,
+)[0]
+
+// Load display mappings and create a lookup map for O(1) access
+const displayMappingsCollection = await getCollection('displayMappings')
+
+const displayMappingsMap = new Map<string, string>()
+displayMappingsCollection.forEach(({ id, data }) => {
+  displayMappingsMap.set(id, data)
+})
+
+// Import all thumbnails using glob for Astro optimization
+const thumbnailModules = import.meta.glob<{ default: ImageMetadata }>(
+  '@/assets/thumbs/*.png',
+  { eager: true },
+)
+
+// Create a map of thumbHash to optimized image URL
+const thumbnailMap = new Map<string, string>()
+Object.entries(thumbnailModules).forEach(([path, module]) => {
+  // Extract filename from path (e.g., "/src/assets/thumbs/abc123.png" -> "abc123")
+  const filename = path.split('/').pop()?.replace('.png', '') ?? ''
+  if (filename) {
+    thumbnailMap.set(filename, module.default.src)
+  }
+})
+
+// Helper function to get display name
+function getDisplayName(
+  categoryName: string,
+  itemName: string,
+  thumbHash: string,
+): string {
+  const key = `${categoryName}:${itemName}#${thumbHash}`
+  return displayMappingsMap.get(key) ?? itemName
+}
+
+// Format price with currency symbol
+function formatPrice(price: number): string {
+  return price.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+}
+
+// Generate a safe ID from category name
+function getCategoryId(categoryName: string): string {
+  return `category-${categoryName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`
+}
+
+// Get thumbnail image path (returns optimized path if available)
+function getThumbnailPath(thumbHash: string): string {
+  return thumbnailMap.get(thumbHash) ?? `/thumbs/${thumbHash}.png`
+}
+---
+
+<Layout>
+  <main>
+    <h1>ABI Trading Platform</h1>
+
+    {
+      latestSnapshot ? (
+        <article>
+          <header>
+            <h2>Latest Snapshot</h2>
+            <time
+              datetime={new Date(
+                latestSnapshot.data.timestamp * 1000,
+              ).toISOString()}
+              title={new Date(
+                latestSnapshot.data.timestamp * 1000,
+              ).toLocaleString()}
+            >
+              {new Date(latestSnapshot.data.timestamp * 1000).toLocaleString()}
+            </time>
+          </header>
+
+          {Object.entries(latestSnapshot.data.categories).map(
+            ([categoryName, items]) => {
+              const categoryId = getCategoryId(categoryName)
+              return (
+                <section aria-labelledby={categoryId}>
+                  <h3 id={categoryId}>{categoryName}</h3>
+                  <ul role="list">
+                    {items.map((item) => {
+                      const displayName = getDisplayName(
+                        categoryName,
+                        item.itemName,
+                        item.thumbHash,
+                      )
+                      const itemKey = `${categoryName}:${item.itemName}#${item.thumbHash}`
+                      return (
+                        <li>
+                          <article>
+                            {item.thumbHash && (
+                              <div class="thumbnail-container">
+                                <a href={`/items/${itemKeyToSlug(itemKey)}`}>
+                                  <img
+                                    src={getThumbnailPath(item.thumbHash)}
+                                    alt={`${displayName} thumbnail`}
+                                    loading="lazy"
+                                    class="thumbnail"
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            <h4>
+                              <a href={`/items/${itemKeyToSlug(itemKey)}`}>
+                                {displayName}
+                              </a>
+                            </h4>
+                            <p>
+                              <span class="price-label">Price:</span>{' '}
+                              <span class="price-value">
+                                {formatPrice(item.price)}
+                              </span>
+                            </p>
+                          </article>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )
+            },
+          )}
+        </article>
+      ) : (
+        <p class="no-data">No snapshot data available.</p>
+      )
+    }
+  </main>
+</Layout>
+
+<style>
+  main {
+    flex: 1;
+  }
+
+  article {
+    header {
+      margin-bottom: 2rem;
+
+      time {
+        display: block;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+      }
+    }
+  }
+
+  .no-data {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 3rem 1rem;
+  }
+
+  section {
+    margin-bottom: 3rem;
+
+    h3 {
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+
+    li article {
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--bg-secondary);
+      transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+
+      &:hover {
+        border-color: var(--border-hover);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .thumbnail-container {
+        width: 100%;
+        aspect-ratio: 1;
+        margin-bottom: 0.75rem;
+        border-radius: 4px;
+        overflow: hidden;
+        background: var(--bg-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .thumbnail {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+
+      h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      p {
+        margin: 0.25rem 0;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+
+        .price-label {
+          font-weight: 500;
+        }
+
+        .price-value {
+          color: var(--color-accent);
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  li article a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  li article a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+  }
+
+  .thumbnail-container a {
+    display: block;
+  }
+</style>

@@ -1,0 +1,72 @@
+---
+import MoonStarsIcon from "@/assets/moon-stars-icon.svg";
+import LightModeIcon from "@/assets/light-mode-icon.svg";
+---
+
+<button class="theme-toggle" aria-label="Toggle theme">
+  <LightModeIcon class="light-icon" />
+  <MoonStarsIcon class="dark-icon" />
+</button>
+
+<script is:inline>
+  const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function applyTheme(isDark) {
+    document.body.classList.toggle("dark-mode", isDark);
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+  }
+
+  const savedTheme = localStorage.getItem("theme");
+  const isDark = savedTheme ? savedTheme === "dark" : prefersDarkScheme.matches;
+  applyTheme(isDark);
+
+  if (!savedTheme) {
+    prefersDarkScheme.addEventListener("change", (e) => applyTheme(e.matches));
+  }
+</script>
+
+<script>
+  const themeToggle = document.querySelector(".theme-toggle");
+
+  themeToggle?.addEventListener("click", () => {
+    const isDarkNow = document.body.classList.contains("dark-mode");
+    const newIsDark = !isDarkNow;
+    document.body.classList.toggle("dark-mode", newIsDark);
+    localStorage.setItem("theme", newIsDark ? "dark" : "light");
+  });
+</script>
+
+<style>
+  .theme-toggle {
+    fill: var(--text-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: light-dark(
+        rgba(100, 100, 100, 0.1),
+        rgba(255, 255, 255, 0.1)
+      );
+    }
+
+    .light-icon {
+      display: block;
+    }
+    .dark-icon {
+      display: none;
+    }
+
+    .dark-mode & {
+      .light-icon {
+        display: none;
+      }
+      .dark-icon {
+        display: block;
+      }
+    }
+  }
+</style>

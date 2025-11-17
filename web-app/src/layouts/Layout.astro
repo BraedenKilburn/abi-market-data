@@ -1,0 +1,35 @@
+---
+import "@/styles/global.css";
+import "@fontsource-variable/atkinson-hyperlegible-next";
+
+import GlobalHeader from "@/components/header/GlobalHeader.astro";
+import GlobalFooter from "@/components/GlobalFooter.astro";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="generator" content={Astro.generator} />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="#0077b6"
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#598392"
+    />
+    <link rel="canonical" href={Astro.url} />
+    <title>ABI Trading Platform</title>
+  </head>
+  <body>
+    <GlobalHeader />
+    <slot />
+    <GlobalFooter />
+  </body>
+</html>

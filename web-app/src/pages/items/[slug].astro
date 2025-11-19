@@ -2,7 +2,7 @@
 import Layout from '@/layouts/Layout.astro'
 import { getCollection } from 'astro:content'
 import type { CollectionEntry } from 'astro:content'
-import { processItemData, getAllItemKeys } from '@/lib/data'
+import { processItemData, getAllItemKeys } from '@/utils/data'
 
 type Catalog = CollectionEntry<'catalog'>
 
@@ -201,15 +201,14 @@ function formatPercent(value: number | null): string {
     background: var(--bg-tertiary);
     border-radius: 8px;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative;
   }
 
   .item-thumbnail img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
+    display: block;
   }
 
   .item-info h1 {

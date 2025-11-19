@@ -2,7 +2,7 @@
 import Layout from '@/layouts/Layout.astro'
 import { getCollection } from 'astro:content'
 import type { CollectionEntry } from 'astro:content'
-import { itemKeyToSlug } from '@/lib/data'
+import { itemKeyToSlug } from '@/utils/data'
 
 type Catalog = CollectionEntry<'catalog'>
 const catalog: Catalog[] = await getCollection('catalog')
@@ -69,30 +69,14 @@ function getThumbnailPath(thumbHash: string): string {
 
 <Layout>
   <main>
-    <h1>ABI Trading Platform</h1>
-
     {
       latestSnapshot ? (
-        <article>
-          <header>
-            <h2>Latest Snapshot</h2>
-            <time
-              datetime={new Date(
-                latestSnapshot.data.timestamp * 1000,
-              ).toISOString()}
-              title={new Date(
-                latestSnapshot.data.timestamp * 1000,
-              ).toLocaleString()}
-            >
-              {new Date(latestSnapshot.data.timestamp * 1000).toLocaleString()}
-            </time>
-          </header>
-
+        <section class="latest-snapshot">
           {Object.entries(latestSnapshot.data.categories).map(
             ([categoryName, items]) => {
               const categoryId = getCategoryId(categoryName)
               return (
-                <section aria-labelledby={categoryId}>
+                <section class="category" aria-labelledby={categoryId}>
                   <h3 id={categoryId}>{categoryName}</h3>
                   <ul role="list">
                     {items.map((item) => {
@@ -137,7 +121,7 @@ function getThumbnailPath(thumbHash: string): string {
               )
             },
           )}
-        </article>
+        </section>
       ) : (
         <p class="no-data">No snapshot data available.</p>
       )
@@ -148,17 +132,18 @@ function getThumbnailPath(thumbHash: string): string {
 <style>
   main {
     flex: 1;
-  }
 
-  article {
-    header {
-      margin-bottom: 2rem;
+    .latest-snapshot {
+      margin-top: 2rem;
 
-      time {
-        display: block;
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        margin-top: 0.5rem;
+      .category {
+        margin-bottom: 3rem;
+
+        h3 {
+          margin-bottom: 1rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 2px solid var(--border-color);
+        }
       }
     }
   }
@@ -167,16 +152,6 @@ function getThumbnailPath(thumbHash: string): string {
     text-align: center;
     color: var(--text-muted);
     padding: 3rem 1rem;
-  }
-
-  section {
-    margin-bottom: 3rem;
-
-    h3 {
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--border-color);
-    }
   }
 
   ul {
@@ -209,15 +184,13 @@ function getThumbnailPath(thumbHash: string): string {
         border-radius: 4px;
         overflow: hidden;
         background: var(--bg-tertiary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: relative;
       }
 
       .thumbnail {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
         display: block;
       }
 
@@ -257,5 +230,7 @@ function getThumbnailPath(thumbHash: string): string {
 
   .thumbnail-container a {
     display: block;
+    width: 100%;
+    height: 100%;
   }
 </style>
